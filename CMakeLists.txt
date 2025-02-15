@@ -9,7 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(LIBRARY /usr/local/lib)
 set(INCLUDE /usr/local/include)
 set(INCLUDE_LCD /usr/local/include/lcdgfx)
-set(SRC_LIST src/mapper.cpp executable/main.cpp)
+set(SRC_LIST src/mapper.cpp executable/main.cpp
+        src/display.cpp
+        include/intelli/display.h)
 
 # Link directories
 link_directories(${LIBRARY})

@@ -1,25 +1,38 @@
-#include <lcdgfx/lcdgfx.h>
 #include <sense/dualsense.h>
 #include <sense/constants.h>
 #include <robomaster/robomaster.h>
 #include <robomaster/definitions.h>
 
 #include "intelli/mapper.h"
+#include "intelli/display.h"
 
 void single_completion(bool condition, auto&& completion) {
     static bool is_called = false; is_called = condition && (is_called || (completion(), true));
 }
 
+void display_thread(const robomaster::RoboMaster& robomaster, Display& display, const DisplayData& data) {
+    while (robomaster.is_running()) {
+        display.update_display(data);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
+
 int main() {
-    auto display = DisplaySSD1306_128x64_I2C(-1, { -1, 0x3D, -1, -1, 1000000 });
+    auto display = Display();
     auto robomaster = robomaster::RoboMaster();
     auto dualsense = sense::DualSense();
-    auto blaster = robomaster::INFRARED;
+    auto blaster_mode = robomaster::BLASTER_MODE_IR;
+    auto display_data = DisplayData();
 
-    display.setFixedFont(ssd1306xled_font6x8); display.begin(); display.clear(); display.drawWindow(0, 0, 0, 0, "RoboPi v2.0", true);
-    if (!robomaster.init() || !dualsense.set_open()) { std::printf("[Error]: initialization failed\n"); return -1; }
-    robomaster.set_torque(true); robomaster.set_led(robomaster::STATIC, robomaster::LED_MASK_ALL, 128, 0, 255);
+    if (!robomaster.init() || !dualsense.set_open()) { std::printf("[Intelli v2.0]: initialization failed\n"); return -1; }
+    display.prepare_display();
+    std::thread(display_thread, std::ref(robomaster), std::ref(display), std::ref(display_data)).detach();
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_ENABLE);
+    robomaster.set_led(robomaster::LED_MODE_STATIC, robomaster::LED_MASK_ALL, 128, 0, 255);
+
+    printf("[Intelli v2.0]: successfully started...\n");
     while (dualsense.is_active() && robomaster.is_running()) {
         auto axis = dualsense.get_axis(); auto buttons = dualsense.get_buttons();
         const auto throttle = Mapper::map_trigger(axis[sense::AXIS_RIGHT_TRIGGER]);
@@ -29,21 +42,26 @@ int main() {
         const auto gimbal_z = Mapper::map_analog(axis[sense::AXIS_RIGHT_THUMB_X]);
         const auto gimbal_y = Mapper::map_analog(axis[sense::AXIS_RIGHT_THUMB_Y]);
 
-        single_completion(buttons[sense::BUTTON_SHOULDER_RIGHT], [&blaster, &robomaster] { robomaster.set_blaster(blaster); });
-        single_completion(buttons[sense::BUTTON_TRIANGLE], [&blaster] { blaster = blaster == robomaster::INFRARED ? robomaster::GELBEADS : robomaster::INFRARED; });
+        single_completion(buttons[sense::BUTTON_SHARE], [&robomaster]{ robomaster.set_gimbal_recenter(200, 200); });
+        single_completion(buttons[sense::BUTTON_OPTIONS], [&robomaster]{ robomaster.set_gimbal_velocity(0, 0); });
+        single_completion(buttons[sense::BUTTON_SHOULDER_RIGHT], [&blaster_mode, &robomaster] { robomaster.set_blaster(blaster_mode); });
+        single_completion(buttons[sense::BUTTON_TRIANGLE], [&blaster_mode] { blaster_mode = blaster_mode == robomaster::BLASTER_MODE_IR ? robomaster::BLASTER_MODE_GEL : robomaster::BLASTER_MODE_IR; });
+        if (buttons[sense::BUTTON_SHOULDER_LEFT]) { robomaster.set_blaster(blaster_mode); }
 
         const auto speed = reversed > 0 ? static_cast<int16_t>(-reversed * 1.0) : static_cast<int16_t>(throttle * 5.0);
-        robomaster.set_wheel_rpm(
+        robomaster.set_chassis_rpm(
             steering > 0.0f ? static_cast<int16_t>(speed * steering) : speed,
             steering > 0.0f ? static_cast<int16_t>(speed) : steering < 0.0f ? static_cast<int16_t>(speed * -steering) : static_cast<int16_t>(speed),
             steering > 0.0f ? static_cast<int16_t>(speed) : steering < 0.0f ? static_cast<int16_t>(speed * -steering) : static_cast<int16_t>(speed),
             steering > 0.0f ? static_cast<int16_t>(speed * steering) : speed
         );
-        robomaster.set_gimbal(static_cast<int16_t>(100 * -gimbal_y), static_cast<int16_t>(200 * gimbal_z));
+        robomaster.set_gimbal_degree(static_cast<int16_t>(100 * -gimbal_y), static_cast<int16_t>(200 * gimbal_z));
 
-        const auto state = robomaster.get_state(); const auto info = dualsense.get_device_info();
-        Mapper::update_display(display, blaster == robomaster::GELBEADS ? "GEL" : "IFR", throttle, state.battery);
-        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        const auto state = robomaster.get_state(); display_data.blaster_mode = blaster_mode;
+        if (state.esc.has_data) { display_data.esc_data = state.esc.speed; }
+        if (state.battery.has_data) { display_data.battery_percent = state.battery.percent; }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    robomaster.set_brake(); std::this_thread::sleep_for(std::chrono::milliseconds(2000)); robomaster.set_torque(false); return 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(25)); robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_DISABLE); return 0;
 }
