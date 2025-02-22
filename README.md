@@ -17,7 +17,7 @@ The intelli v2.0 controller is build with a Raspberry Pi 5 and a PiCAN FD HAT, i
 
 # Linux Kernel:
 The intelli v2.0 uses the always latest version of the `Raspberry Pi OS Lite`. For a better performance,
-i would recommend to update the kernel to at least `6.12.x` and enable the `PREEMT_RT` patch. This can be done like this:
+i would recommend to update the kernel to at least `6.12.x` and enable the `PREEMPT_RT` patch. This can be done like this:
 
 ```shell
 # install requirements
@@ -26,7 +26,7 @@ sudo apt install git bc bison flex libssl-dev make -y && sudo apt install libncu
 # clone the linux kernel repo for raspberry pi
 git clone --depth 1 --branch rpi-6.12.y https://github.com/raspberrypi/linux
 
-# create configs and enable PREEMT_RT, CONFIG_HZ_1000 and CPU performance governor
+# create configs and enable PREEMPT_RT, CONFIG_HZ_1000 and CPU performance governor
 make bcm2712_defconfig && make menuconfig
 
 # prepare and compile kernel with all available cores
