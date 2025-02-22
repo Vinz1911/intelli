@@ -22,29 +22,66 @@
  * SOFTWARE.
  */
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
-
+#pragma once
 #include <string>
 #include <lcdgfx/lcdgfx.h>
 #include <robomaster/robomaster.h>
 
+/**
+ * @brief model to store display data.
+ */
 struct DisplayData {
+    /**
+     * @brief the current blaster mode.
+     */
     robomaster::BlasterMode blaster_mode = robomaster::BLASTER_MODE_IR;
+
+    /**
+     * @brief the speed values for all wheels.
+     */
     std::array<int16_t, 4> esc_data = { 0, 0, 0, 0 };
+
+    /**
+     * @brief the current battery value [0, 100].
+     */
     uint8_t battery_percent = 0;
 };
 
+/**
+ * @brief basic operations for the ssd1306 display.
+ */
 class Display {
+    /**
+     * @brief instance of the display.
+     */
     DisplaySSD1306_128x64_I2C ssd1306;
+
+    /**
+     * @brief format values for print.
+     * @param number the number to format.
+     * @return the formatted number.
+     */
     static std::string format(int number);
 
 public:
-    Display();
+    /**
+     * @brief constructor of display.
+     */
+    Display(/* args */);
+
+    /**
+     * @brief destructor of display.
+     */
     ~Display() = default;
 
+    /**
+     * @brief prepare display.
+     */
     void prepare_display();
+
+    /**
+     * @brief update the display.
+     * @param data the display data.
+     */
     void update_display(DisplayData data);
 };
-
-#endif //DISPLAY_H

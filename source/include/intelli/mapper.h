@@ -22,9 +22,7 @@
  * SOFTWARE.
  */
 
-#ifndef MAPPER_H
-#define MAPPER_H
-
+#pragma once
 #include <cstdint>
 
 class Mapper {
@@ -44,5 +42,3 @@ public:
      */
     static double map_analog(int input, bool inverted = false);
 };
-
-#endif // MAPPER_H
