@@ -1,5 +1,5 @@
 /*
-* MIT License
+ * MIT License
  *
  * Copyright (c) 2025 Vinzenz Weist
  *
@@ -49,10 +49,7 @@ void single_completion(bool condition, auto&& completion) {
 }
 
 void display_thread(const robomaster::RoboMaster& robomaster, Display& display, const DisplayData& data) {
-    while (robomaster.is_running()) {
-        display.update_display(data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
+    while (robomaster.is_running()) { display.update_display(data); std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
 }
 
 int main() {
@@ -61,22 +58,15 @@ int main() {
 
     if (!robomaster.init()) { std::printf("[Intelli v2.0]: initialization failed!\n"); return -1; }
     display.prepare_display(); std::thread(display_thread, std::ref(robomaster), std::ref(display), std::ref(display_data)).detach();
-    printf("[Intelli v2.0]: successfully started!\n");
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_ENABLE);
+    printf("[Intelli v2.0]: system engaged!\n");
 
     while (robomaster.is_running()) {
-        while (!dualsense.is_active()) {
-            printf("[Intelli v2.0]: wait for remote to pair...\n");
-            robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_DISABLE);
-            robomaster.set_led(robomaster::LED_MODE_BREATHE, robomaster::LED_MASK_ALL, 128, 0, 255, 500, 500);
-            if (dualsense.set_open()) { break; }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        }
-
-        printf("[Intelli v2.0]: system has started!\n");
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_ENABLE);
-        robomaster.set_led(robomaster::LED_MODE_STATIC, robomaster::LED_MASK_ALL, 128, 0, 255);
-        dualsense.set_led(32, 0, 255);
+        if (!dualsense.is_active()) { robomaster.set_led(robomaster::LED_MODE_BREATHE, robomaster::LED_MASK_ALL, 128, 0, 255, 500, 500); printf("[Intelli v2.0]: wait for remote to pair...\n"); }
+        while (!dualsense.is_active()) { robomaster.set_chassis_rpm(0, 0, 0, 0); dualsense.set_open(); std::this_thread::sleep_for(std::chrono::milliseconds(1000)); }
+        printf("[Intelli v2.0]: remote successfully paired!\n"); robomaster.set_led(robomaster::LED_MODE_STATIC, robomaster::LED_MASK_ALL, 128, 0, 255); dualsense.set_led(32, 0, 255);
 
         while (dualsense.is_active() && robomaster.is_running()) {
             auto axis = dualsense.get_axis(); auto buttons = dualsense.get_buttons();
@@ -108,6 +98,6 @@ int main() {
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    if (robomaster.is_running()) { robomaster.set_chassis_mode(robomaster::CHASSIS_MODE_DISABLE); }
-    printf("[Intelli v2.0]: system has exited!\n"); return 0;
+    if (robomaster.is_running()) { robomaster.set_chassis_rpm(0, 0, 0, 0); }
+    printf("[Intelli v2.0]: system stopped!\n"); return 0;
 }
