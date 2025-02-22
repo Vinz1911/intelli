@@ -1,4 +1,4 @@
-# intelli
+# Intelli v2.0
 **Intelli v2.0** is a collection of different projects for the `RoboMaster S1`.
 The goal is to get rid of the original `Intelli Controller` from the RoboMaster.
 The intelli v2.0 controller is build with a Raspberry Pi 5 and a PiCAN FD HAT, it uses the robomaster c++ library.
