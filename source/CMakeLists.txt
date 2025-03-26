@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(LIBRARY /usr/local/lib)
 set(INCLUDE /usr/local/include)
 set(INCLUDE_LCD /usr/local/include/lcdgfx)
-set(SRC_LIST src/mapper.cpp executable/main.cpp src/display.cpp include/intelli/display.h)
+set(SRC_LIST src/mapper.cpp executable/main.cpp src/display.cpp)
 
 # Link directories
 link_directories(${LIBRARY})
@@ -19,4 +19,4 @@ include_directories(${CMAKE_SOURCE_DIR}/include ${INCLUDE} ${INCLUDE_LCD})
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 # Link the necessary libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE robomaster lcdgfx sense)
+target_link_libraries(${PROJECT_NAME} PRIVATE robomaster lcdgfx sense xcrsf)
