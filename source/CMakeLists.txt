@@ -19,4 +19,4 @@ include_directories(${CMAKE_SOURCE_DIR}/include ${INCLUDE} ${INCLUDE_LCD})
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 # Link the necessary libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE robomaster lcdgfx sense xcrsf)
+target_link_libraries(${PROJECT_NAME} PRIVATE robomaster lcdgfx xcrsf)
